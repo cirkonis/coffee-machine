@@ -1,17 +1,23 @@
 package main
 
-import "fmt"
-
-const (
-	buyOption  = "buy"
-	fillOption = "fill"
-	takeOption = "take"
+import (
+	"fmt"
+	"os"
 )
 
 const (
-	espresso = iota + 1
-	latte
-	cappuccino
+	buyOption       = "buy"
+	fillOption      = "fill"
+	takeOption      = "take"
+	remainingOption = "remaining"
+	exitOption      = "exit"
+)
+
+const (
+	espressoOption   = "1"
+	latteOption      = "2"
+	cappuccinoOption = "3"
+	backOption       = "back"
 )
 
 const (
@@ -44,49 +50,53 @@ var (
 )
 
 func main() {
-	printCoffeeStatus()
-	handleOption()
+	beginCoffeeMachineProcess()
 }
 
-func printCoffeeStatus() {
-	fmt.Printf("The coffee machine has: \n")
-	fmt.Printf("%d ml of water \n", water)
-	fmt.Printf("%d ml of milk \n", milk)
-	fmt.Printf("%d g of coffee beans \n", beans)
-	fmt.Printf("%d disposable cups \n", cups)
-	fmt.Printf("%d of money \n", money)
-}
-
-func handleOption() {
-	fmt.Printf("Write action (buy, fill, take)")
+func beginCoffeeMachineProcess() {
+	fmt.Printf("Write action (buy, fill, take, remaining, exit) \n")
 	var input string
 	fmt.Scan(&input)
 	switch true {
 	case input == buyOption:
-		buyCoffee()
+		chooseCoffee()
 	case input == fillOption:
 		fillMachine()
 	case input == takeOption:
 		takeMoney()
+	case input == remainingOption:
+		remainingSupplies()
+	case input == exitOption:
+		exitProgram()
 	default:
-		fmt.Printf("I think you got confused...")
-		handleOption()
+		fmt.Printf("I think you got confused... \n")
+		beginCoffeeMachineProcess()
 	}
 }
 
-func buyCoffee() {
-	fmt.Printf("What do you want to buy? 1 - espresso, 2 - latte, 3 - cappuccino: \n")
-	var drinkChosen int
-	fmt.Scan(&drinkChosen)
+func chooseCoffee() {
+	fmt.Printf("What do you want to buy? 1 - espresso, 2 - latte, 3 - cappuccino, back - to main menu: \n")
+	var optionChosen string
+	fmt.Scan(&optionChosen)
 	switch true {
-	case drinkChosen == espresso:
-		sellCoffee(espressoWaterPerCup, espressoMilkPerCup, espressoBeansPerCup, espressoCost)
-	case drinkChosen == latte:
-		sellCoffee(latteWaterPerCup, latteMilkPerCup, latteBeansPerCup, latteCost)
-	case drinkChosen == cappuccino:
-		sellCoffee(cappuccinoWaterPerCup, cappuccinoMilkPerCup, cappuccinoBeansPerCup, cappuccinoCost)
+	case optionChosen == espressoOption:
+		checkIfEnough(espressoWaterPerCup, espressoMilkPerCup, espressoBeansPerCup)
+		updateMachine(-1*espressoWaterPerCup, -1*espressoMilkPerCup, -1*espressoBeansPerCup, -1, espressoCost)
+	case optionChosen == latteOption:
+		checkIfEnough(latteWaterPerCup, latteMilkPerCup, latteBeansPerCup)
+		updateMachine(-1*latteWaterPerCup, -1*latteMilkPerCup, -1*latteBeansPerCup, -1, latteCost)
+	case optionChosen == cappuccinoOption:
+		checkIfEnough(cappuccinoWaterPerCup, cappuccinoMilkPerCup, cappuccinoBeansPerCup)
+		updateMachine(-1*cappuccinoWaterPerCup, -1*cappuccinoMilkPerCup, -1*cappuccinoBeansPerCup, -1, cappuccinoCost)
+	case optionChosen == backOption:
+		chooseCoffee()
+	case optionChosen == remainingOption:
+		remainingSupplies()
+	default:
+		fmt.Printf("I think you got confused... \n")
+		beginCoffeeMachineProcess()
 	}
-
+	beginCoffeeMachineProcess()
 }
 
 func fillMachine() {
@@ -108,29 +118,7 @@ func fillMachine() {
 
 	updateMachine(waterToAdd, milkToAdd, beansToAdd, cupsToAdd, 0)
 
-	printCoffeeStatus()
-	handleOption()
-}
-
-func takeMoney() {
-	fmt.Printf(" I gave you $%d \n", money)
-	updateMachine(0, 0, 0, 0, -1*money)
-	printCoffeeStatus()
-	handleOption()
-}
-
-func sellCoffee(waterPerCup, milkPerCup, beansPerCup, cost int) {
-	minCups := calculateMinCups(waterPerCup, milkPerCup, beansPerCup)
-	if minCups != 0 {
-		updateMachine(-1*waterPerCup, -1*milkPerCup, -1*beansPerCup, -1, cost)
-		printCoffeeStatus()
-		handleOption()
-	} else {
-		fmt.Printf("Not enough matierals to make that order. \n")
-		fmt.Printf("Try again. \n")
-		printCoffeeStatus()
-		handleOption()
-	}
+	beginCoffeeMachineProcess()
 }
 
 func updateMachine(waterUpdate, milkUpdate, beansUpdate, cupsUpdate, moneyUpdate int) {
@@ -141,20 +129,41 @@ func updateMachine(waterUpdate, milkUpdate, beansUpdate, cupsUpdate, moneyUpdate
 	money += moneyUpdate
 }
 
-func calculateMinCups(waterPerCup, milkPerCup, beansPerCup int) int {
-	if milkPerCup == 0 {
-		milkPerCup = 1
-	}
-	minCups := water / waterPerCup
-	if milk/milkPerCup < minCups {
-		minCups = milk / milkPerCup
-	}
-	if beans/beansPerCup < minCups {
-		minCups = beans / beansPerCup
-	}
-	if cups < minCups {
-		minCups = cups
-	}
+func takeMoney() {
+	fmt.Printf("I gave you $%d \n", money)
+	updateMachine(0, 0, 0, 0, -1*money)
+	beginCoffeeMachineProcess()
+}
 
-	return minCups
+func remainingSupplies() {
+	fmt.Printf("The coffee machine has: \n")
+	fmt.Printf("%d ml of water \n", water)
+	fmt.Printf("%d ml of milk \n", milk)
+	fmt.Printf("%d g of coffee beans \n", beans)
+	fmt.Printf("%d disposable cups \n", cups)
+	fmt.Printf("$%d of money \n", money)
+	beginCoffeeMachineProcess()
+}
+
+func exitProgram() {
+	os.Exit(0)
+}
+
+func checkIfEnough(waterPerCup, milkPerCup, beansPerCup int) {
+	switch true {
+	case waterPerCup > water:
+		fmt.Printf("Sorry, not enough water! \n")
+		beginCoffeeMachineProcess()
+	case milkPerCup > milk:
+		fmt.Printf("Sorry, not enough milk! \n")
+		beginCoffeeMachineProcess()
+	case beansPerCup > beans:
+		fmt.Printf("Sorry, not enough beans! \n")
+		beginCoffeeMachineProcess()
+	case cups == 0:
+		fmt.Printf("Sorry, not enough cups! \n")
+		beginCoffeeMachineProcess()
+	default:
+		fmt.Printf("I have enough resources, making you a cofee! \n")
+	}
 }
